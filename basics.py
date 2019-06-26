@@ -9,7 +9,7 @@ from datetime import datetime
 # Configure a DBAPI engine to manage the database
 # interactions
 # engine = create_engine('sqlite:///:memory:')
-engine = create_engine('sqlite:///db.sqlite3')
+engine = create_engine('sqlite:///db.sqlite3', echo=True)
 # engine = create_engine(f'postgresql://{username}:{password}@{hostname}/{database}')
 
 # Create a active session manager using the DBAPI engine
@@ -130,6 +130,14 @@ contacts = session.query(Contact).filter(Contact.last_name.like('%orke')).all()
 print(f'Total contacts found: {len(contacts)}')
 for contact in contacts:
     print(repr(contact))
+
+# Deleting a contact
+contacts = session.query(Contact).filter(Contact.first_name.ilike('Jane')).all()
+print(f'Found {len(contacts)} contacts to delete')
+for contact in contacts:
+    session.delete(contact)
+session.commit()
+
 
 # Automatic error checking
 try:

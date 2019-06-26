@@ -1,6 +1,7 @@
 # SQL Alchemy Hack-a-thon
 
-Hack-a-thon code: https://www.github.com/rydevops/sqlalchemyhat
+*  Hack-a-thon code: https://www.github.com/rydevops/sqlalchemyhat
+*  SQLite browser: https://sqlitebrowser.org/
 
 ## <u>Topics</u>
 
@@ -17,6 +18,7 @@ Hack-a-thon code: https://www.github.com/rydevops/sqlalchemyhat
    *  Create new records
    *  Commiting data
    *  Querying for records
+   *  Deleting records
 *  Creating relationships
    *  One-to-One
    *  One-to-Many
@@ -51,6 +53,30 @@ This demonstration was created using Python 3.6 and requires the following pytho
 
 **Q:** Can I change the model/table through SQL Alchemy (also known as a migration)?<br>
 **A:** The default configuration of SQL Alchemy does not provide a migration facility out of the box however a seperate package ([SQL Alchemy Migrate](https://sqlalchemy-migrate.readthedocs.io/en/latest/)) has been created to enable this functionality. Other ORMs such as django do include the migration facilities. 
+
+## <u>Challenge #1 - Create some simple models</u>
+
+**Timebox:** 30 minutes
+
+As a group perform the following actions on a single computer:
+
+1.  Create a new virtual environment and install sqlalchemy
+2.  Setup a new session and engine
+3.  Create the models for 2 to 3 tables from the sample ERD (ignore foreign keys)
+4.  Insert a couple of rows of data into each table. 
+5.  Run your code and validate it works
+
+## <u>Challenge #2 - Create some relationships</u>
+
+**Timebox:** 30 minutes
+
+As a group perform the following actions on a single computer:
+
+1.  Using the tables from the previous challenge setup the foreign key constraints
+2.  Configure relationship variables between the models
+3.  Delete your db.sqlite3 file
+4.  Create some new records that insert data using the new constraints
+5.  Run your code and validate it works
 
 ## <u>Documentation</u>:
 *  [ORM Documentation](https://docs.sqlalchemy.org/en/13/)

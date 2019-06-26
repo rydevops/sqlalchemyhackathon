@@ -1,41 +1,30 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
 from sqlalchemy.orm import sessionmaker, relationship
 import os
 import sys
 from datetime import datetime
 
-
-engine = create_engine('sqlite:///db.sqlite3')
-# Postgres Setup
-# engine = create_engine(f'postgresql://{username}:{password}@{hostname}/{database}')
-
-# Setup a session to the database (creating the empty database if it doesn't exist)
-Session = sessionmaker(bind=engine) # Creates a new Session class binded to the engine for connections
-session = Session() # Establishes a connection
-
-# Create a new Base class for all declartive models
-# to inherit from providng all the base functionality
-# that each model requires
 Base = declarative_base()
 
+contact_person_number_table = Table('contact_person_number', 
+                                    Base.metadata,
+                                    Column('contact_id', Integer, ForeignKey('contact.contact_id')),
+                                    Column('phone_number_id', Integer, ForeignKey('phone_number.phone_number_id')))
+
 class Contact(Base):
-    # Set the table name
     __tablename__ = 'contact'
 
-    # Create individual table columns
-    # including their types. 
     contact_id = Column(Integer, primary_key=True)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     date_of_birth = Column(DateTime, nullable=True)
 
-    # Creates a class relationship (not part of the database itself)
-    # that automatically finds all associated addresses when this is used. 
-    # The back_populates fills the 'contact' field in the Address class whenever
-    # a new instance is created. 
     addresses = relationship('Address', back_populates='contact')
+    email_addresses  =  relationship('EmailAddress', back_populates='contact')
+    phone_numbers  = relationship('PhoneNumber', 
+                                  secondary=contact_person_number_table)
 
     def __repr__(self):
         return (f'<Contact(contact_id={self.contact_id}, '
@@ -53,37 +42,119 @@ class Address(Base):
     city = Column(String, nullable=False)
     province = Column(String, nullable=False)
 
-    
-    # Configures the ForeignKey constraints - Ensuring that this record
-    # cannot exist unless a contact exists and is assigned to this record. 
     contact_id = Column(Integer, ForeignKey('contact.contact_id'))
     
-    # This creates a field 'contact' that will find the contact associated
-    # with an instance of this class. The back_populates instructs the class
-    # to load the 'addresses' field automatically in the Contact class.
-    # The contact class needs this field created before this can actually
-    # happen. 
-    contact = relationship('Contact', back_populates='addresses')
+    contact = relationship('Contact', uselist=False, back_populates='addresses')
 
-# Using the base class create all the tables schemas
-# in the memory database using the associated (inheriting)
-# classes
+    def __repr__(self):
+        return (f'<Address(address_id={self.address_id}, '
+                f'apartment_number={self.apartment_number}, '
+                f'street_number={self.street_number},'
+                f'street_name={self.street_name},'
+                f'city={self.city},'
+                f'province={self.province})>')
+
+class EmailAddress(Base):
+    __tablename__ =  'email_address'
+
+    email_address_id = Column(Integer, primary_key=True)
+    email_address = Column(String)
+    
+    contact_id = Column(Integer, ForeignKey('contact.contact_id'))
+
+    contact = relationship('Contact', uselist=False, back_populates='email_addresses')
+
+    def __repr__(self):
+        return (f'<EmailAddress(email_address_id={self.email_address_id}, '
+                f'email_address={self.email_address})>')
+
+class PhoneNumber(Base):
+    __tablename__ = 'phone_number'
+
+    phone_number_id = Column(Integer, primary_key=True)
+    phone_number = Column(String)
+    
+    phone_number_type_id = Column(Integer, ForeignKey('phone_number_type.phone_number_type_id'))
+
+    contacts = relationship('Contact', 
+                           secondary=contact_person_number_table)
+    phone_number_type =  relationship('PhoneNumberType')
+
+    def __repr__(self):
+        return (f'<PhoneNumber(phone_number_id={self.phone_number_id}, '
+                f'phone_number={self.phone_number})>')
+
+class PhoneNumberType(Base):
+    __tablename__ = 'phone_number_type'
+
+    phone_number_type_id = Column(Integer, primary_key=True)
+    phone_number_type = Column(String)
+
+    def __repr__(self):
+        return (f'<PhoneNumberType(phone_number_type_id={self.phone_number_type_id}, '
+                f'phone_number_type={self.phone_number_type})>')
+
+
+engine = create_engine('sqlite:///:memory:', echo=True)
+Session = sessionmaker(bind=engine)
+session = Session()
+
 Base.metadata.create_all(engine)
 
-# Create a new contact with 2 addresses
-contact = Contact(first_name='Russell', last_name='Yorke', date_of_birth=datetime(1982, 1, 4))
-print(repr(contact.addresses)) # Notice this is an empty list at this moment
-address_a = Address(street_number=191, street_name='Pioneer Ave', city='Winnipeg', province='Manitoba')
-address_b = Address(street_number=166, street_name='Portage Ave E', city='Winnipeg', province='Manitoba')
-contact.addresses.append(address_a)
-contact.addresses.append(address_b)
-print(repr(contact.addresses)) # Notice this list now holds entries
+# Create a new contact and associated data
+contact1 = Contact(first_name='Russell', last_name='Yorke', date_of_birth=datetime(1983, 10, 23))
+print(repr(contact1))
 
-session.add(contact)
-session.new # Notice this adds all three records with a single add
+address1 = Address(street_number=191, street_name='Sherbrooke St', city='Winnipeg', province='Manitoba')
+print(repr(address1))
+print(repr(contact1.addresses))
+contact1.addresses.append(address1)
+print(repr(contact1.addresses))
 
-# Query for the record
-contact = session.query(Contact).filter_by(first_name='Russell').one()
-print(contact.first_name, contact.last_name)
-for address in contact.addresses:
-    print(address.street_number, address.street_name)
+email_addr1 = EmailAddress(email_address='r.y@gmail.com')
+print(repr(email_addr1))
+print(repr(contact1.email_addresses))
+contact1.email_addresses.append(email_addr1)
+
+phone_type = PhoneNumberType(phone_number_type='Cell')
+phone_number1  = PhoneNumber(phone_number='4315551717', phone_number_type=phone_type)
+print(repr(phone_type))
+print(repr(phone_number1))
+contact1.phone_numbers.append(phone_number1)
+
+session.add(contact1)
+for row in session.new:
+    print(repr(row))
+
+session.commit()
+
+# Querying records
+query_results = session.query(Contact, Address).filter_by(first_name='Russell').all()
+print(repr(query_results))
+contact, address = query_results[0]
+print(repr(contact))
+print(repr(address))
+
+# Using models  to walk tables
+contact = session.query(Contact).filter_by(first_name='Russell').first()
+print(repr(contact))
+print(repr(contact.addresses))
+print(repr(contact.email_addresses))
+print(repr(contact.phone_numbers))
+
+# Using join syntax (left-outer-join) to find users who have a gmail
+# address
+query_results = session.query(Contact).join(EmailAddress).filter(EmailAddress.email_address.ilike('%gmail%'))
+contacts = query_results.all()
+for contact in contacts:
+    print(repr(contact))
+    for email in contact.email_addresses:
+        print(repr(email))
+    print()
+
+# More efficient (less queries)
+query_results = session.query(Contact, EmailAddress).join(EmailAddress).filter(EmailAddress.email_address.ilike('%gmail%'))
+for contact, email_address in query_results:
+    print(repr(contact))
+    print(repr(email_address))
+    print()
